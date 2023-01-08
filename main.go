@@ -5,6 +5,7 @@ import (
 	"github.com/gdamore/tcell"
 	"github.com/gdamore/tcell/encoding"
 	"os"
+	"time"
 )
 
 const PaddleHeight = 4
@@ -17,6 +18,8 @@ type Paddle struct {
 var screen tcell.Screen
 var player1 *Paddle
 var player2 *Paddle
+var debugLog string
+var counter int
 
 func PrintString(col, row int, str string) {
 	for _, c := range str {
@@ -35,6 +38,8 @@ func Print(col, row, width, height int, ch rune) {
 
 func DrawState() {
 	screen.Clear()
+	PrintString(0, 0, debugLog)
+	Print(3, 5, 1, 1, rune(counter+'0'))
 	Print(player1.col, player1.row, player1.width, player1.height, PaddleSymbol)
 	Print(player2.col, player2.row, player2.width, player2.height, PaddleSymbol)
 	//PrintString(screen, 0, 0, "Hello, World!")
@@ -45,23 +50,23 @@ func DrawState() {
 func main() {
 	InitScreen()
 	InitGameState()
-
+	inputChan := InitUserInput()
 	for {
+		//counter++
 		DrawState()
-		switch ev := screen.PollEvent().(type) {
-		case *tcell.EventKey:
-			if ev.Key() == tcell.KeyEscape {
-				screen.Fini()
-				os.Exit(0)
-			} else if ev.Key() == tcell.KeyUp {
-				player2.row--
-			} else if ev.Key() == tcell.KeyDown {
-				player2.row++
-			} else if ev.Rune() == 'w' {
-				player1.row--
-			} else if ev.Rune() == 's' {
-				player1.row++
-			}
+		time.Sleep(50 * time.Millisecond)
+		key := ReadInput(inputChan)
+		if key == "Rune[q]" {
+			screen.Fini()
+			os.Exit(0)
+		} else if key == "Up" {
+			player2.row--
+		} else if key == "Down" {
+			player2.row++
+		} else if key == "Rune[w]" {
+			player1.row--
+		} else if key == "Rune[s]" {
+			player1.row++
 		}
 	}
 }
@@ -85,6 +90,20 @@ func InitScreen() {
 	screen.SetStyle(defStyle)
 }
 
+func InitUserInput() chan string {
+	inputChan := make(chan string)
+	go func() {
+		for {
+			switch ev := screen.PollEvent().(type) {
+			case *tcell.EventKey:
+				inputChan <- ev.Name()
+			}
+		}
+	}()
+
+	return inputChan
+}
+
 func InitGameState() {
 	width, height := screen.Size()
 	paddleStart := height/2 - PaddleHeight/2
@@ -96,4 +115,16 @@ func InitGameState() {
 	player2 = &Paddle{
 		row: paddleStart, col: width - 1, width: 1, height: PaddleHeight,
 	}
+}
+
+func ReadInput(inputChan chan string) string {
+	var key string
+
+	select {
+	case key = <-inputChan:
+	default:
+		key = ""
+	}
+
+	return key
 }
