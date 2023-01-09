@@ -10,41 +10,21 @@ import (
 
 const PaddleHeight = 4
 const PaddleSymbol = 0x2588
+const BallSymbol = 0x25CF
 
-type Paddle struct {
+type GameObject struct {
 	row, col, width, height int
+	symbol                  rune
 }
 
 var screen tcell.Screen
-var player1 *Paddle
-var player2 *Paddle
+var player1Paddle *GameObject
+var player2Paddle *GameObject
+var ball *GameObject
 var debugLog string
 var counter int
 
-func PrintString(col, row int, str string) {
-	for _, c := range str {
-		screen.SetContent(col, row, c, nil, tcell.StyleDefault)
-		col += 1
-	}
-}
-
-func Print(col, row, width, height int, ch rune) {
-	for r := 0; r < height; r++ {
-		for c := 0; c < width; c++ {
-			screen.SetContent(col+c, row+r, ch, nil, tcell.StyleDefault)
-		}
-	}
-}
-
-func DrawState() {
-	screen.Clear()
-	PrintString(0, 0, debugLog)
-	Print(3, 5, 1, 1, rune(counter+'0'))
-	Print(player1.col, player1.row, player1.width, player1.height, PaddleSymbol)
-	Print(player2.col, player2.row, player2.width, player2.height, PaddleSymbol)
-	//PrintString(screen, 0, 0, "Hello, World!")
-	screen.Show()
-}
+var gameObjects []*GameObject
 
 // This program just prints "Hello, World!".  Press ESC to exit.
 func main() {
@@ -99,14 +79,14 @@ func HandleUserInput(key string) {
 	if key == "Rune[q]" {
 		screen.Fini()
 		os.Exit(0)
-	} else if key == "Up" && player2.row > 0 {
-		player2.row--
-	} else if key == "Down" && player2.row+player2.height < screenHeight {
-		player2.row++
-	} else if key == "Rune[w]" && player1.row > 0 {
-		player1.row--
-	} else if key == "Rune[s]" && player1.row+player1.height < screenHeight {
-		player1.row++
+	} else if key == "Up" && player2Paddle.row > 0 {
+		player2Paddle.row--
+	} else if key == "Down" && player2Paddle.row+player2Paddle.height < screenHeight {
+		player2Paddle.row++
+	} else if key == "Rune[w]" && player1Paddle.row > 0 {
+		player1Paddle.row--
+	} else if key == "Rune[s]" && player1Paddle.row+player1Paddle.height < screenHeight {
+		player1Paddle.row++
 	}
 }
 
@@ -114,12 +94,22 @@ func InitGameState() {
 	width, height := screen.Size()
 	paddleStart := height/2 - PaddleHeight/2
 
-	player1 = &Paddle{
-		row: paddleStart, col: 0, width: 1, height: PaddleHeight,
+	player1Paddle = &GameObject{
+		row: paddleStart, col: 0, width: 1, height: PaddleHeight, symbol: PaddleSymbol,
 	}
 
-	player2 = &Paddle{
-		row: paddleStart, col: width - 1, width: 1, height: PaddleHeight,
+	player2Paddle = &GameObject{
+		row: paddleStart, col: width - 1, width: 1, height: PaddleHeight, symbol: PaddleSymbol,
+	}
+
+	ball = &GameObject{
+		row: height / 2, col: width / 2, width: 1, height: 1, symbol: BallSymbol,
+	}
+
+	gameObjects = []*GameObject{
+		player1Paddle,
+		player2Paddle,
+		ball,
 	}
 }
 
@@ -133,4 +123,33 @@ func ReadInput(inputChan chan string) string {
 	}
 
 	return key
+}
+
+func PrintString(col, row int, str string) {
+	for _, c := range str {
+		screen.SetContent(col, row, c, nil, tcell.StyleDefault)
+		col += 1
+	}
+}
+
+func Print(col, row, width, height int, ch rune) {
+	for r := 0; r < height; r++ {
+		for c := 0; c < width; c++ {
+			screen.SetContent(col+c, row+r, ch, nil, tcell.StyleDefault)
+		}
+	}
+}
+
+func DrawState() {
+	screen.Clear()
+	PrintString(0, 0, debugLog)
+
+	for _, obj := range gameObjects {
+		Print(obj.col, obj.row, obj.width, obj.height, obj.symbol)
+	}
+
+	//Print(3, 5, 1, 1, rune(counter+'0'))
+
+	//PrintString(screen, 0, 0, "Hello, World!")
+	screen.Show()
 }
