@@ -11,9 +11,23 @@ import (
 const PaddleHeight = 4
 const PaddleSymbol = 0x2588
 const BallSymbol = 0x25CF
+const InitialBallVelocityRow = 1
+const InitialBallVelocityCol = 2
+
+/**
+
+How to measure ball velocity in XY Coordinates - Raw demonstration
+
+           (-1,-1)     (-1,0)    (-1,1)
+                     \    |    /
+	(0, -1) <--------- (ball) ---------> (0,1)
+					/	 |    \
+		   (1,-1)      (1,0)     (1,1)
+*/
 
 type GameObject struct {
 	row, col, width, height int
+	velRow, velCol          int // Velocity for the ball movement, Defining velocity in this struct is not ideal
 	symbol                  rune
 }
 
@@ -33,10 +47,11 @@ func main() {
 	inputChan := InitUserInput()
 	for {
 		//counter++
+		HandleUserInput(ReadInput(inputChan))
+		UpdateState()
 		DrawState()
-		time.Sleep(50 * time.Millisecond)
-		key := ReadInput(inputChan)
-		HandleUserInput(key)
+		time.Sleep(75 * time.Millisecond)
+
 	}
 }
 
@@ -95,15 +110,21 @@ func InitGameState() {
 	paddleStart := height/2 - PaddleHeight/2
 
 	player1Paddle = &GameObject{
-		row: paddleStart, col: 0, width: 1, height: PaddleHeight, symbol: PaddleSymbol,
+		row: paddleStart, col: 0, width: 1, height: PaddleHeight,
+		velRow: 0, velCol: 0,
+		symbol: PaddleSymbol,
 	}
 
 	player2Paddle = &GameObject{
-		row: paddleStart, col: width - 1, width: 1, height: PaddleHeight, symbol: PaddleSymbol,
+		row: paddleStart, col: width - 1, width: 1, height: PaddleHeight,
+		velRow: 0, velCol: 0,
+		symbol: PaddleSymbol,
 	}
 
 	ball = &GameObject{
-		row: height / 2, col: width / 2, width: 1, height: 1, symbol: BallSymbol,
+		row: height / 2, col: width / 2, width: 1, height: 1,
+		velRow: InitialBallVelocityRow, velCol: InitialBallVelocityCol,
+		symbol: BallSymbol,
 	}
 
 	gameObjects = []*GameObject{
@@ -148,8 +169,12 @@ func DrawState() {
 		Print(obj.col, obj.row, obj.width, obj.height, obj.symbol)
 	}
 
-	//Print(3, 5, 1, 1, rune(counter+'0'))
-
-	//PrintString(screen, 0, 0, "Hello, World!")
 	screen.Show()
+}
+
+func UpdateState() {
+	for i := range gameObjects {
+		gameObjects[i].row += gameObjects[i].velRow
+		gameObjects[i].col += gameObjects[i].velCol
+	}
 }
