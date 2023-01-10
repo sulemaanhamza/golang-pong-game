@@ -216,6 +216,6 @@ func CollidesWithPaddle(ball, paddle *GameObject) bool {
 	}
 
 	return columnCollision &&
-		ball.row+ball.velRow >= paddle.row &&
-		ball.row+ball.velRow < paddle.row+paddle.height
+		ball.row >= paddle.row &&
+		ball.row < paddle.row+paddle.height
 }
