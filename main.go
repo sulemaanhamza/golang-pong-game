@@ -177,4 +177,13 @@ func UpdateState() {
 		gameObjects[i].row += gameObjects[i].velRow
 		gameObjects[i].col += gameObjects[i].velCol
 	}
+
+	if CollidesWithWall(ball) {
+		ball.velRow = -ball.velRow
+	}
+}
+
+func CollidesWithWall(obj *GameObject) bool {
+	_, screenHeight := screen.Size()
+	return obj.row+obj.velRow < 0 || obj.row+obj.velRow >= screenHeight
 }
