@@ -46,13 +46,37 @@ func main() {
 	InitScreen()
 	InitGameState()
 	inputChan := InitUserInput()
-	for {
+	for !IsGameOver() {
 		//counter++
 		HandleUserInput(ReadInput(inputChan))
 		UpdateState()
 		DrawState()
-		time.Sleep(75 * time.Millisecond)
+		time.Sleep(60 * time.Millisecond)
 
+	}
+
+	winner := GetWinner()
+	screenWidth, screenHeight := screen.Size()
+	PrintStringCenter(screenWidth/2, screenHeight/2-1, "Game Over!")
+	PrintStringCenter(screenWidth/2, screenHeight/2, fmt.Sprintf("%s wins...", winner))
+	screen.Show()
+	time.Sleep(3 * time.Second)
+	screen.Fini()
+}
+
+func IsGameOver() bool {
+	return GetWinner() != ""
+}
+
+func GetWinner() string {
+	screenWidth, _ := screen.Size()
+
+	if ball.col < 0 {
+		return "Player 1"
+	} else if ball.col >= screenWidth {
+		return "Player 2"
+	} else {
+		return ""
 	}
 }
 
@@ -149,6 +173,11 @@ func ReadInput(inputChan chan string) string {
 	return key
 }
 
+func PrintStringCenter(col, row int, str string) {
+	col = col - len(str)/2
+	PrintString(col, row, str)
+}
+
 func PrintString(col, row int, str string) {
 	for _, c := range str {
 		screen.SetContent(col, row, c, nil, tcell.StyleDefault)
@@ -210,7 +239,7 @@ func CollidesWithPaddle(ball, paddle *GameObject) bool {
 	var columnCollision bool
 
 	if ball.col < paddle.col {
-		columnCollision = ball.col+ball.velCol == paddle.col
+		columnCollision = ball.col+ball.velCol >= paddle.col
 	} else {
 		columnCollision = ball.col+ball.velCol <= paddle.col
 	}
